@@ -152,6 +152,17 @@ This application is still actively being developed, so keep an eye on the repo t
 * Upgraded search engine
 * MongoDB and Memcached sharding
 
+## Building With Conan
+
+_Work In Progress!_
+
+```shell
+$ cd DeathStarBench/socialNetwork
+$ mkdir -p build
+$ cd build
+$ conan install --build=missing .. && conan build ..
+```
+
 ## Questions and contact
 
 You are welcome to submit a pull request if you find a bug or have extended the application in an interesting way. For any questions please contact us at: <microservices-bench-L@list.cornell.edu>
