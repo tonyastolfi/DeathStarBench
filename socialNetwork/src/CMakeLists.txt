@@ -1,19 +1,20 @@
 include("../cmake/Findlibmemcached.cmake")
-#include("../cmake/Findthrift.cmake")
-find_package(Thrift REQUIRED)
-set(THRIFT_LIB thrift::thrift)
 include("../cmake/FindLibevent.cmake")
 
-#find_package(libmongoc-1.0 1.13 REQUIRED)
-find_package(mongoc-1.0 1.13 REQUIRED)
-set(MONGOC_LIBRARIES mongo::mongoc_static)
-find_package(nlohmann_json 3.5.0 REQUIRED)
-find_package(Threads)
 find_package(OpenSSL REQUIRED)
+find_package(OpenTracing REQUIRED)
+find_package(Threads)
+find_package(Thrift REQUIRED)
 find_package(amqpcpp REQUIRED)
-find_package(yaml-cpp REQUIRED)
-find_package(libmemcached REQUIRED)
 find_package(cpp-jwt REQUIRED)
+find_package(libmemcached REQUIRED)
+find_package(mongoc-1.0 1.13 REQUIRED)
+find_package(nlohmann_json 3.5.0 REQUIRED)
+find_package(redis++ REQUIRED)
+find_package(yaml-cpp REQUIRED)
+
+set(MONGOC_LIBRARIES mongo::mongoc_static)
+set(THRIFT_LIB thrift::thrift)
 
 set(Boost_USE_STATIC_LIBS ON)
 #find_package(Boost 1.54.0 REQUIRED COMPONENTS log log_setup program_options)
@@ -45,7 +46,9 @@ endif()
 
 
 
-set(THRIFT_GEN_CPP_DIR ../../gen-cpp)
+set(THRIFT_GEN_CPP_DIR ${CMAKE_BINARY_DIR}/gen-cpp)
+file(MAKE_DIRECTORY ${THRIFT_GEN_CPP_DIR})
+execute_process(COMMAND thrift -out ${THRIFT_GEN_CPP_DIR} -gen cpp ${CMAKE_CURRENT_SOURCE_DIR}/../social_network.thrift)
 
 add_subdirectory(TextService)
 add_subdirectory(UniqueIdService)

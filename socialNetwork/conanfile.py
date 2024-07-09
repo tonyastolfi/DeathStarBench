@@ -31,6 +31,8 @@ class SocialNetworkRecipe(ConanFile):
         self.requires("mongo-c-driver/1.27.3")
         self.requires("nlohmann_json/3.11.3")
         self.requires("openssl/3.2.2")
+        self.requires("opentracing-cpp/1.6.0")
+        self.requires("redis-plus-plus/1.3.12")
         self.requires("thrift/0.20.0")
         self.requires("yaml-cpp/0.8.0")
         #

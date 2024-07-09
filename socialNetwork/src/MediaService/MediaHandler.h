@@ -5,7 +5,8 @@
 #include <iostream>
 #include <string>
 
-#include "../../gen-cpp/MediaService.h"
+#include "MediaService.h"
+
 #include "../logger.h"
 #include "../tracing.h"
 
@@ -15,7 +16,7 @@
 namespace social_network {
 
 class MediaHandler : public MediaServiceIf {
- public:
+public:
   MediaHandler() = default;
   ~MediaHandler() override = default;
 
@@ -24,7 +25,7 @@ class MediaHandler : public MediaServiceIf {
                     const std::vector<int64_t> &,
                     const std::map<std::string, std::string> &) override;
 
- private:
+private:
 };
 
 void MediaHandler::ComposeMedia(
@@ -59,6 +60,6 @@ void MediaHandler::ComposeMedia(
   span->Finish();
 }
 
-}  // namespace social_network
+} // namespace social_network
 
-#endif  // SOCIAL_NETWORK_MICROSERVICES_SRC_MEDIASERVICE_MEDIAHANDLER_H_
+#endif // SOCIAL_NETWORK_MICROSERVICES_SRC_MEDIASERVICE_MEDIAHANDLER_H_

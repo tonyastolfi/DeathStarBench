@@ -30,6 +30,7 @@ target_link_libraries(
     OpenSSL::SSL
     cpp-jwt::cpp-jwt
     yaml-cpp
+    OpenTracing::OpenTracing
 )
 
 install(TARGETS UserService DESTINATION ./)

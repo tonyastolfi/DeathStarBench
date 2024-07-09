@@ -8,8 +8,9 @@
 #include <sstream>
 #include <string>
 
-#include "../../gen-cpp/UniqueIdService.h"
-#include "../../gen-cpp/social_network_types.h"
+#include "UniqueIdService.h"
+#include "social_network_types.h"
+
 #include "../logger.h"
 #include "../tracing.h"
 
@@ -40,14 +41,14 @@ static int GetCounter(int64_t timestamp) {
 }
 
 class UniqueIdHandler : public UniqueIdServiceIf {
- public:
+public:
   ~UniqueIdHandler() override = default;
   UniqueIdHandler(std::mutex *, const std::string &);
 
   int64_t ComposeUniqueId(int64_t, PostType::type,
                           const std::map<std::string, std::string> &) override;
 
- private:
+private:
   std::mutex *_thread_lock;
   std::string _machine_id;
 };
@@ -155,6 +156,6 @@ std::string GetMachineId(std::string &netif) {
   return mac_hash;
 }
 
-}  // namespace social_network
+} // namespace social_network
 
-#endif  // SOCIAL_NETWORK_MICROSERVICES_UNIQUEIDHANDLER_H
+#endif // SOCIAL_NETWORK_MICROSERVICES_UNIQUEIDHANDLER_H

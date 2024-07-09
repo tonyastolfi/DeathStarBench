@@ -1,3 +1,5 @@
+message("ComposePostService: THRIFT_GEN_CPP_DIR is ${THRIFT_GEN_CPP_DIR}")
+
 add_executable(
     ComposePostService
     ComposePostService.cpp
@@ -30,7 +32,8 @@ target_link_libraries(
     /usr/local/lib/libjaegertracing.so
     /usr/local/lib/libSimpleAmqpClient.so
     yaml-cpp
-
+    OpenTracing::OpenTracing
+    redis++::redis++_static
 )
 
 install(TARGETS ComposePostService DESTINATION ./)

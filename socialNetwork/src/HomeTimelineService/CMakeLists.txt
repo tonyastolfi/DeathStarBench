@@ -30,6 +30,8 @@ target_link_libraries(
     /usr/local/lib/libredis++.a
     OpenSSL::SSL
     yaml-cpp
+    OpenTracing::OpenTracing
+    redis++::redis++_static
 )
 
 install(TARGETS HomeTimelineService DESTINATION ./)

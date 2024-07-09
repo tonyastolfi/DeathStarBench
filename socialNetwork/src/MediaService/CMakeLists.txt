@@ -1,3 +1,5 @@
+message("MediaService: THRIFT_GEN_CPP_DIR is ${THRIFT_GEN_CPP_DIR}")
+
 add_executable(
     MediaService
     MediaService.cpp
@@ -21,6 +23,7 @@ target_link_libraries(
     Boost::log_setup
     jaegertracing
     yaml-cpp
+    OpenTracing::OpenTracing
 )
 
 install(TARGETS MediaService DESTINATION ./)

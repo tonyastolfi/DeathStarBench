@@ -1,3 +1,5 @@
+message("UserTimelineService: THRIFT_GEN_CPP_DIR is ${THRIFT_GEN_CPP_DIR}")
+
 add_executable(
     UserTimelineService
     UserTimelineService.cpp
@@ -31,6 +33,8 @@ target_link_libraries(
     /usr/local/lib/libredis++.a
     OpenSSL::SSL
     yaml-cpp
+    OpenTracing::OpenTracing
+    redis++::redis++_static
 )
 
 install(TARGETS UserTimelineService DESTINATION ./)

@@ -11,7 +11,8 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-#include "../../gen-cpp/PostStorageService.h"
+#include "PostStorageService.h"
+
 #include "../logger.h"
 #include "../tracing.h"
 
@@ -19,7 +20,7 @@ namespace social_network {
 using json = nlohmann::json;
 
 class PostStorageHandler : public PostStorageServiceIf {
- public:
+public:
   PostStorageHandler(memcached_pool_st *, mongoc_client_pool_t *);
   ~PostStorageHandler() override = default;
 
@@ -33,7 +34,7 @@ class PostStorageHandler : public PostStorageServiceIf {
                  const std::vector<int64_t> &post_ids,
                  const std::map<std::string, std::string> &carrier) override;
 
- private:
+private:
   memcached_pool_st *_memcached_client_pool;
   mongoc_client_pool_t *_mongodb_client_pool;
 };
@@ -370,7 +371,7 @@ void PostStorageHandler::ReadPosts(
 
   std::set<int64_t> post_ids_not_cached(post_ids.begin(), post_ids.end());
   if (post_ids_not_cached.size() != post_ids.size()) {
-    LOG(error)<< "Post_ids are duplicated";
+    LOG(error) << "Post_ids are duplicated";
     ServiceException se;
     se.errorCode = ErrorCode::SE_THRIFT_HANDLER_ERROR;
     se.message = "Post_ids are duplicated";
@@ -630,6 +631,6 @@ void PostStorageHandler::ReadPosts(
   }
 }
 
-}  // namespace social_network
+} // namespace social_network
 
-#endif  // SOCIAL_NETWORK_MICROSERVICES_POSTSTORAGEHANDLER_H
+#endif // SOCIAL_NETWORK_MICROSERVICES_POSTSTORAGEHANDLER_H

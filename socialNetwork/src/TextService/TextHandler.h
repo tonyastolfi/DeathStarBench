@@ -6,9 +6,10 @@
 #include <regex>
 #include <string>
 
-#include "../../gen-cpp/TextService.h"
-#include "../../gen-cpp/UrlShortenService.h"
-#include "../../gen-cpp/UserMentionService.h"
+#include "TextService.h"
+#include "UrlShortenService.h"
+#include "UserMentionService.h"
+
 #include "../ClientPool.h"
 #include "../ThriftClient.h"
 #include "../logger.h"
@@ -17,7 +18,7 @@
 namespace social_network {
 
 class TextHandler : public TextServiceIf {
- public:
+public:
   TextHandler(ClientPool<ThriftClient<UrlShortenServiceClient>> *,
               ClientPool<ThriftClient<UserMentionServiceClient>> *);
   ~TextHandler() override = default;
@@ -25,7 +26,7 @@ class TextHandler : public TextServiceIf {
   void ComposeText(TextServiceReturn &_return, int64_t, const std::string &,
                    const std::map<std::string, std::string> &) override;
 
- private:
+private:
   ClientPool<ThriftClient<UrlShortenServiceClient>> *_url_client_pool;
   ClientPool<ThriftClient<UserMentionServiceClient>> *_user_mention_client_pool;
 };
@@ -168,6 +169,6 @@ void TextHandler::ComposeText(
   span->Finish();
 }
 
-}  // namespace social_network
+} // namespace social_network
 
-#endif  // SOCIAL_NETWORK_MICROSERVICES_TEXTHANDLER_H
+#endif // SOCIAL_NETWORK_MICROSERVICES_TEXTHANDLER_H

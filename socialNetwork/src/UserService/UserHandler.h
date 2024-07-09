@@ -13,9 +13,10 @@
 #include <random>
 #include <string>
 
-#include "../../gen-cpp/SocialGraphService.h"
-#include "../../gen-cpp/UserService.h"
-#include "../../gen-cpp/social_network_types.h"
+#include "SocialGraphService.h"
+#include "UserService.h"
+#include "social_network_types.h"
+
 #include "../../third_party/PicoSHA2/picosha2.h"
 #include "../ClientPool.h"
 #include "../ThriftClient.h"
@@ -52,10 +53,9 @@ static int GetCounter(int64_t timestamp) {
 }
 
 std::string GenRandomString(const int len) {
-  static const std::string alphanum =
-      "0123456789"
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "abcdefghijklmnopqrstuvwxyz";
+  static const std::string alphanum = "0123456789"
+                                      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                      "abcdefghijklmnopqrstuvwxyz";
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<int> dist(
@@ -68,7 +68,7 @@ std::string GenRandomString(const int len) {
 }
 
 class UserHandler : public UserServiceIf {
- public:
+public:
   UserHandler(std::mutex *, const std::string &, const std::string &,
               memcached_pool_st *, mongoc_client_pool_t *,
               ClientPool<ThriftClient<SocialGraphServiceClient>> *);
@@ -80,9 +80,9 @@ class UserHandler : public UserServiceIf {
                           const std::string &, const std::string &, int64_t,
                           const std::map<std::string, std::string> &) override;
 
-  void ComposeCreatorWithUserId(
-      Creator &, int64_t, int64_t, const std::string &,
-      const std::map<std::string, std::string> &) override;
+  void
+  ComposeCreatorWithUserId(Creator &, int64_t, int64_t, const std::string &,
+                           const std::map<std::string, std::string> &) override;
   void ComposeCreatorWithUsername(
       Creator &, int64_t, const std::string &,
       const std::map<std::string, std::string> &) override;
@@ -91,7 +91,7 @@ class UserHandler : public UserServiceIf {
   int64_t GetUserId(int64_t, const std::string &,
                     const std::map<std::string, std::string> &) override;
 
- private:
+private:
   std::string _machine_id;
   std::string _secret;
   std::mutex *_thread_lock;
@@ -746,9 +746,9 @@ void UserHandler::Login(std::string &_return, int64_t req_id,
   }
   span->Finish();
 }
-int64_t UserHandler::GetUserId(
-    int64_t req_id, const std::string &username,
-    const std::map<std::string, std::string> &carrier) {
+int64_t
+UserHandler::GetUserId(int64_t req_id, const std::string &username,
+                       const std::map<std::string, std::string> &carrier) {
   TextMapReader reader(carrier);
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
@@ -942,6 +942,6 @@ std::string GetMachineId(std::string &netif) {
   }
   return mac_hash;
 }
-}  // namespace social_network
+} // namespace social_network
 
-#endif  // SOCIAL_NETWORK_MICROSERVICES_USERHANDLER_H
+#endif // SOCIAL_NETWORK_MICROSERVICES_USERHANDLER_H

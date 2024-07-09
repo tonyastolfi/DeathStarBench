@@ -23,6 +23,8 @@ target_link_libraries(
     Boost::log_setup
     jaegertracing
     yaml-cpp
+    OpenTracing::OpenTracing
+    redis++::redis++_static
 )
 
 install(TARGETS TextService DESTINATION ./)

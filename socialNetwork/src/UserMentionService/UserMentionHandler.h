@@ -6,8 +6,9 @@
 #include <libmemcached/util.h>
 #include <mongoc.h>
 
-#include "../../gen-cpp/UserMentionService.h"
-#include "../../gen-cpp/social_network_types.h"
+#include "UserMentionService.h"
+#include "social_network_types.h"
+
 #include "../ClientPool.h"
 #include "../logger.h"
 #include "../tracing.h"
@@ -16,7 +17,7 @@
 namespace social_network {
 
 class UserMentionHandler : public UserMentionServiceIf {
- public:
+public:
   UserMentionHandler(memcached_pool_st *, mongoc_client_pool_t *);
   ~UserMentionHandler() override = default;
 
@@ -24,7 +25,7 @@ class UserMentionHandler : public UserMentionServiceIf {
                            const std::vector<std::string> &,
                            const std::map<std::string, std::string> &) override;
 
- private:
+private:
   memcached_pool_st *_memcached_client_pool;
   mongoc_client_pool_t *_mongodb_client_pool;
 };
@@ -230,6 +231,6 @@ void UserMentionHandler::ComposeUserMentions(
   span->Finish();
 }
 
-}  // namespace social_network
+} // namespace social_network
 
-#endif  // SOCIAL_NETWORK_MICROSERVICES_SRC_USERMENTIONSERVICE_USERMENTIONHANDLER_H_
+#endif // SOCIAL_NETWORK_MICROSERVICES_SRC_USERMENTIONSERVICE_USERMENTIONHANDLER_H_

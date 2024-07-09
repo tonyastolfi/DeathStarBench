@@ -7,9 +7,10 @@
 #include <iostream>
 #include <string>
 
-#include "../../gen-cpp/HomeTimelineService.h"
-#include "../../gen-cpp/PostStorageService.h"
-#include "../../gen-cpp/SocialGraphService.h"
+#include "HomeTimelineService.h"
+#include "PostStorageService.h"
+#include "SocialGraphService.h"
+
 #include "../ClientPool.h"
 #include "../ThriftClient.h"
 #include "../logger.h"
@@ -18,16 +19,14 @@
 using namespace sw::redis;
 namespace social_network {
 class HomeTimelineHandler : public HomeTimelineServiceIf {
- public:
+public:
   HomeTimelineHandler(Redis *,
                       ClientPool<ThriftClient<PostStorageServiceClient>> *,
                       ClientPool<ThriftClient<SocialGraphServiceClient>> *);
 
-
-  HomeTimelineHandler(Redis *,Redis *,
-      ClientPool<ThriftClient<PostStorageServiceClient>>*,
-      ClientPool<ThriftClient<SocialGraphServiceClient>>*);
-
+  HomeTimelineHandler(Redis *, Redis *,
+                      ClientPool<ThriftClient<PostStorageServiceClient>> *,
+                      ClientPool<ThriftClient<SocialGraphServiceClient>> *);
 
   HomeTimelineHandler(RedisCluster *,
                       ClientPool<ThriftClient<PostStorageServiceClient>> *,
@@ -43,13 +42,13 @@ class HomeTimelineHandler : public HomeTimelineServiceIf {
                          const std::vector<int64_t> &,
                          const std::map<std::string, std::string> &) override;
 
- private:
-     Redis *_redis_replica_pool;
-     Redis *_redis_primary_pool;
-     Redis *_redis_client_pool;
-     RedisCluster *_redis_cluster_client_pool;
-     ClientPool<ThriftClient<PostStorageServiceClient>> *_post_client_pool;
-     ClientPool<ThriftClient<SocialGraphServiceClient>> *_social_graph_client_pool;
+private:
+  Redis *_redis_replica_pool;
+  Redis *_redis_primary_pool;
+  Redis *_redis_client_pool;
+  RedisCluster *_redis_cluster_client_pool;
+  ClientPool<ThriftClient<PostStorageServiceClient>> *_post_client_pool;
+  ClientPool<ThriftClient<SocialGraphServiceClient>> *_social_graph_client_pool;
 };
 
 HomeTimelineHandler::HomeTimelineHandler(
@@ -57,12 +56,12 @@ HomeTimelineHandler::HomeTimelineHandler(
     ClientPool<ThriftClient<PostStorageServiceClient>> *post_client_pool,
     ClientPool<ThriftClient<SocialGraphServiceClient>>
         *social_graph_client_pool) {
-    _redis_primary_pool = nullptr;
-    _redis_replica_pool = nullptr;
-    _redis_client_pool = redis_pool;
-    _redis_cluster_client_pool = nullptr;
-    _post_client_pool = post_client_pool;
-    _social_graph_client_pool = social_graph_client_pool;
+  _redis_primary_pool = nullptr;
+  _redis_replica_pool = nullptr;
+  _redis_client_pool = redis_pool;
+  _redis_cluster_client_pool = nullptr;
+  _post_client_pool = post_client_pool;
+  _social_graph_client_pool = social_graph_client_pool;
 }
 
 HomeTimelineHandler::HomeTimelineHandler(
@@ -70,30 +69,29 @@ HomeTimelineHandler::HomeTimelineHandler(
     ClientPool<ThriftClient<PostStorageServiceClient>> *post_client_pool,
     ClientPool<ThriftClient<SocialGraphServiceClient>>
         *social_graph_client_pool) {
-    _redis_primary_pool = nullptr;
-    _redis_replica_pool = nullptr;
-    _redis_client_pool = nullptr;
-    _redis_cluster_client_pool = redis_pool; 
-    _post_client_pool = post_client_pool;
-    _social_graph_client_pool = social_graph_client_pool;
+  _redis_primary_pool = nullptr;
+  _redis_replica_pool = nullptr;
+  _redis_client_pool = nullptr;
+  _redis_cluster_client_pool = redis_pool;
+  _post_client_pool = post_client_pool;
+  _social_graph_client_pool = social_graph_client_pool;
 }
 
 HomeTimelineHandler::HomeTimelineHandler(
-    Redis *redis_replica_pool,
-    Redis *redis_primary_pool,
-    ClientPool<ThriftClient<PostStorageServiceClient>>* post_client_pool,
+    Redis *redis_replica_pool, Redis *redis_primary_pool,
+    ClientPool<ThriftClient<PostStorageServiceClient>> *post_client_pool,
     ClientPool<ThriftClient<SocialGraphServiceClient>>
-    * social_graph_client_pool) {
-    _redis_primary_pool = redis_primary_pool;
-    _redis_replica_pool = redis_replica_pool;
-    _redis_client_pool = nullptr;
-    _redis_cluster_client_pool = nullptr;
-    _post_client_pool = post_client_pool;
-    _social_graph_client_pool = social_graph_client_pool;
+        *social_graph_client_pool) {
+  _redis_primary_pool = redis_primary_pool;
+  _redis_replica_pool = redis_replica_pool;
+  _redis_client_pool = nullptr;
+  _redis_cluster_client_pool = nullptr;
+  _post_client_pool = post_client_pool;
+  _social_graph_client_pool = social_graph_client_pool;
 }
 
 bool HomeTimelineHandler::IsRedisReplicationEnabled() {
-    return (_redis_primary_pool || _redis_replica_pool);
+  return (_redis_primary_pool || _redis_replica_pool);
 }
 
 void HomeTimelineHandler::WriteHomeTimeline(
@@ -157,46 +155,51 @@ void HomeTimelineHandler::WriteHomeTimeline(
         throw err;
       }
     }
-    
+
     else if (IsRedisReplicationEnabled()) {
-        auto pipe = _redis_primary_pool->pipeline(false);
-        for (auto& follower_id : followers_id_set) {
-            pipe.zadd(std::to_string(follower_id), post_id_str, timestamp,
-                UpdateType::NOT_EXIST);
-        }
-        try {
-            auto replies = pipe.exec();
-        }
-        catch (const Error& err) {
-            LOG(error) << err.what();
-            throw err;
-        }
+      auto pipe = _redis_primary_pool->pipeline(false);
+      for (auto &follower_id : followers_id_set) {
+        pipe.zadd(std::to_string(follower_id), post_id_str, timestamp,
+                  UpdateType::NOT_EXIST);
+      }
+      try {
+        auto replies = pipe.exec();
+      } catch (const Error &err) {
+        LOG(error) << err.what();
+        throw err;
+      }
     }
-    
+
     else {
       // Create multi-pipeline that match with shards pool
-      std::map<std::shared_ptr<ConnectionPool>, std::shared_ptr<Pipeline>> pipe_map;
+      std::map<std::shared_ptr<ConnectionPool>, std::shared_ptr<Pipeline>>
+          pipe_map;
       auto *shards_pool = _redis_cluster_client_pool->get_shards_pool();
 
       for (auto &follower_id : followers_id_set) {
         auto conn = shards_pool->fetch(std::to_string(follower_id));
         auto pipe = pipe_map.find(conn);
-        if(pipe == pipe_map.end()) {//Not found, create new pipeline and insert
-          auto new_pipe = std::make_shared<Pipeline>(_redis_cluster_client_pool->pipeline(std::to_string(follower_id), false));
+        if (pipe ==
+            pipe_map.end()) { // Not found, create new pipeline and insert
+          auto new_pipe =
+              std::make_shared<Pipeline>(_redis_cluster_client_pool->pipeline(
+                  std::to_string(follower_id), false));
           pipe_map.insert(make_pair(conn, new_pipe));
           auto *_pipe = new_pipe.get();
           _pipe->zadd(std::to_string(follower_id), post_id_str, timestamp,
-                  UpdateType::NOT_EXIST);
-        }else{//Found, use exist pipeline
-          std::pair<std::shared_ptr<ConnectionPool>, std::shared_ptr<Pipeline>> found = *pipe;
+                      UpdateType::NOT_EXIST);
+        } else { // Found, use exist pipeline
+          std::pair<std::shared_ptr<ConnectionPool>, std::shared_ptr<Pipeline>>
+              found = *pipe;
           auto *_pipe = found.second.get();
           _pipe->zadd(std::to_string(follower_id), post_id_str, timestamp,
-                  UpdateType::NOT_EXIST);
+                      UpdateType::NOT_EXIST);
         }
       }
-      // LOG(info) <<"followers_id_set items:" << followers_id_set.size()<<"; pipeline items:" << pipe_map.size();
+      // LOG(info) <<"followers_id_set items:" << followers_id_set.size()<<";
+      // pipeline items:" << pipe_map.size();
       try {
-        for(auto const &it : pipe_map) {
+        for (auto const &it : pipe_map) {
           auto _pipe = it.second.get();
           _pipe->exec();
         }
@@ -209,7 +212,6 @@ void HomeTimelineHandler::WriteHomeTimeline(
   }
   redis_span->Finish();
 }
-
 
 void HomeTimelineHandler::ReadHomeTimeline(
     std::vector<Post> &_return, int64_t req_id, int64_t user_id, int start_idx,
@@ -237,13 +239,12 @@ void HomeTimelineHandler::ReadHomeTimeline(
       _redis_client_pool->zrevrange(std::to_string(user_id), start_idx,
                                     stop_idx - 1,
                                     std::back_inserter(post_ids_str));
+    } else if (IsRedisReplicationEnabled()) {
+      _redis_replica_pool->zrevrange(std::to_string(user_id), start_idx,
+                                     stop_idx - 1,
+                                     std::back_inserter(post_ids_str));
     }
-    else if (IsRedisReplicationEnabled()) {
-        _redis_replica_pool->zrevrange(std::to_string(user_id), start_idx,
-                                       stop_idx - 1,
-                                       std::back_inserter(post_ids_str));
-    }
-    
+
     else {
       _redis_cluster_client_pool->zrevrange(std::to_string(user_id), start_idx,
                                             stop_idx - 1,
@@ -279,6 +280,6 @@ void HomeTimelineHandler::ReadHomeTimeline(
   span->Finish();
 }
 
-}  // namespace social_network
+} // namespace social_network
 
-#endif  // SOCIAL_NETWORK_MICROSERVICES_SRC_HOMETIMELINESERVICE_HOMETIMELINEHANDLER_H_
+#endif // SOCIAL_NETWORK_MICROSERVICES_SRC_HOMETIMELINESERVICE_HOMETIMELINEHANDLER_H_
