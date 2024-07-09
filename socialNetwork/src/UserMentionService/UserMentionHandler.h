@@ -45,11 +45,13 @@ void UserMentionHandler::ComposeUserMentions(
   TextMapReader reader(carrier);
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "compose_user_mentions_server",
       {opentracing::ChildOf(parent_span->get())});
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   std::vector<UserMention> user_mentions;
   if (!usernames.empty()) {
@@ -82,9 +84,12 @@ void UserMentionHandler::ComposeUserMentions(
       idx++;
     }
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     auto get_span = opentracing::Tracer::Global()->StartSpan(
         "compose_user_mentions_memcached_get_client",
         {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
+
     rc = memcached_mget(client, keys, key_sizes, usernames.size());
     if (rc != MEMCACHED_SUCCESS) {
       LOG(error) << "Cannot get usernames of request " << req_id << ": "
@@ -93,7 +98,9 @@ void UserMentionHandler::ComposeUserMentions(
       se.errorCode = ErrorCode::SE_MEMCACHED_ERROR;
       se.message = memcached_strerror(client, rc);
       memcached_pool_push(_memcached_client_pool, client);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
       get_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
       throw se;
     }
 
@@ -120,7 +127,9 @@ void UserMentionHandler::ComposeUserMentions(
         se.errorCode = ErrorCode::SE_MEMCACHED_ERROR;
         se.message =
             "Cannot get usernames of request " + std::to_string(req_id);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
         get_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
         throw se;
       }
       UserMention new_user_mention;
@@ -136,7 +145,9 @@ void UserMentionHandler::ComposeUserMentions(
     }
     memcached_quit(client);
     memcached_pool_push(_memcached_client_pool, client);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     get_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     for (int i = 0; i < usernames.size(); ++i) {
       delete keys[i];
     }
@@ -181,9 +192,12 @@ void UserMentionHandler::ComposeUserMentions(
       bson_append_array_end(&query_child_0, &query_username_list);
       bson_append_document_end(query, &query_child_0);
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
       auto find_span = opentracing::Tracer::Global()->StartSpan(
           "compose_user_mentions_mongo_find_client",
           {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
+
       mongoc_cursor_t *cursor =
           mongoc_collection_find_with_opts(collection, query, nullptr, nullptr);
       const bson_t *doc;
@@ -201,7 +215,9 @@ void UserMentionHandler::ComposeUserMentions(
           mongoc_cursor_destroy(cursor);
           mongoc_collection_destroy(collection);
           mongoc_client_pool_push(_mongodb_client_pool, mongodb_client);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
           find_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
           throw se;
         }
         if (bson_iter_init_find(&iter, doc, "username")) {
@@ -214,7 +230,9 @@ void UserMentionHandler::ComposeUserMentions(
           mongoc_cursor_destroy(cursor);
           mongoc_collection_destroy(collection);
           mongoc_client_pool_push(_mongodb_client_pool, mongodb_client);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
           find_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
           throw se;
         }
         user_mentions.emplace_back(new_user_mention);
@@ -223,12 +241,16 @@ void UserMentionHandler::ComposeUserMentions(
       mongoc_cursor_destroy(cursor);
       mongoc_collection_destroy(collection);
       mongoc_client_pool_push(_mongodb_client_pool, mongodb_client);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
       find_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     }
   }
 
   _return = user_mentions;
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 }
 
 } // namespace social_network

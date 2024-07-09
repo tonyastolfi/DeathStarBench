@@ -123,11 +123,13 @@ void UserHandler::RegisterUserWithId(
   TextMapReader reader(carrier);
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "register_user_withid_server",
       {opentracing::ChildOf(parent_span->get())});
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   // Store user info into mongodb
   mongoc_client_t *mongodb_client =
@@ -181,8 +183,10 @@ void UserHandler::RegisterUserWithId(
     BSON_APPEND_UTF8(new_doc, "password", password_hashed.c_str());
 
     bson_error_t error;
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     auto user_insert_span = opentracing::Tracer::Global()->StartSpan(
         "user_mongo_insert_cilent", {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     if (!mongoc_collection_insert_one(collection, new_doc, nullptr, nullptr,
                                       &error)) {
       LOG(error) << "Failed to insert user " << username
@@ -199,7 +203,9 @@ void UserHandler::RegisterUserWithId(
     } else {
       LOG(debug) << "User: " << username << " registered";
     }
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     user_insert_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     bson_destroy(new_doc);
   }
   bson_destroy(query);
@@ -226,7 +232,9 @@ void UserHandler::RegisterUserWithId(
     _social_graph_client_pool->Keepalive(social_graph_client_wrapper);
   }
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 }
 
 void UserHandler::RegisterUser(
@@ -238,10 +246,12 @@ void UserHandler::RegisterUser(
   TextMapReader reader(carrier);
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "register_user_server", {opentracing::ChildOf(parent_span->get())});
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   // Compose user_id
   _thread_lock->lock();
@@ -328,8 +338,10 @@ void UserHandler::RegisterUser(
     std::string password_hashed = picosha2::hash256_hex_string(password + salt);
     BSON_APPEND_UTF8(new_doc, "password", password_hashed.c_str());
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     auto user_insert_span = opentracing::Tracer::Global()->StartSpan(
         "user_mongo_insert_client", {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     if (!mongoc_collection_insert_one(collection, new_doc, nullptr, nullptr,
                                       &error)) {
       LOG(error) << "Failed to insert user " << username
@@ -346,7 +358,9 @@ void UserHandler::RegisterUser(
     } else {
       LOG(debug) << "User: " << username << " registered";
     }
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     user_insert_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     bson_destroy(new_doc);
   }
   bson_destroy(query);
@@ -374,7 +388,9 @@ void UserHandler::RegisterUser(
     _social_graph_client_pool->Keepalive(social_graph_client_wrapper);
   }
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 }
 
 void UserHandler::ComposeCreatorWithUsername(
@@ -383,10 +399,12 @@ void UserHandler::ComposeCreatorWithUsername(
   TextMapReader reader(carrier);
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "compose_creator_server", {opentracing::ChildOf(parent_span->get())});
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   size_t user_id_size;
   uint32_t memcached_flags;
@@ -396,13 +414,17 @@ void UserHandler::ComposeCreatorWithUsername(
       memcached_pool_pop(_memcached_client_pool, true, &memcached_rc);
   char *user_id_mmc;
   if (memcached_client) {
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     auto id_get_span = opentracing::Tracer::Global()->StartSpan(
         "user_mmc_get_client", {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     user_id_mmc =
         memcached_get(memcached_client, (username + ":user_id").c_str(),
                       (username + ":user_id").length(), &user_id_size,
                       &memcached_flags, &memcached_rc);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     id_get_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     if (!user_id_mmc && memcached_rc != MEMCACHED_NOTFOUND) {
       ServiceException se;
       se.errorCode = ErrorCode::SE_MEMCACHED_ERROR;
@@ -446,13 +468,17 @@ void UserHandler::ComposeCreatorWithUsername(
     bson_t *query = bson_new();
     BSON_APPEND_UTF8(query, "username", username.c_str());
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     auto find_span = opentracing::Tracer::Global()->StartSpan(
         "user_mongo_find_client", {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     mongoc_cursor_t *cursor =
         mongoc_collection_find_with_opts(collection, query, nullptr, nullptr);
     const bson_t *doc;
     bool found = mongoc_cursor_next(cursor, &doc);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     find_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     if (!found) {
       bson_error_t error;
       if (mongoc_cursor_error(cursor, &error)) {
@@ -513,15 +539,19 @@ void UserHandler::ComposeCreatorWithUsername(
       memcached_pool_pop(_memcached_client_pool, true, &memcached_rc);
   if (memcached_client) {
     if (user_id != -1 && !cached) {
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
       auto id_set_span = opentracing::Tracer::Global()->StartSpan(
           "user_mmc_set_cilent", {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
       std::string user_id_str = std::to_string(user_id);
       memcached_rc =
           memcached_set(memcached_client, (username + ":user_id").c_str(),
                         (username + ":user_id").length(), user_id_str.c_str(),
                         user_id_str.length(), static_cast<time_t>(0),
                         static_cast<uint32_t>(0));
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
       id_set_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
       if (memcached_rc != MEMCACHED_SUCCESS) {
         LOG(warning) << "Failed to set the user_id of user " << username
                      << " to Memcached: "
@@ -532,7 +562,9 @@ void UserHandler::ComposeCreatorWithUsername(
   } else {
     LOG(warning) << "Failed to pop a client from memcached pool";
   }
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 }
 
 void UserHandler::ComposeCreatorWithUserId(
@@ -542,10 +574,12 @@ void UserHandler::ComposeCreatorWithUserId(
   TextMapReader reader(carrier);
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "compose_creator_server", {opentracing::ChildOf(parent_span->get())});
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   Creator creator;
   creator.username = username;
@@ -553,7 +587,9 @@ void UserHandler::ComposeCreatorWithUserId(
 
   _return = creator;
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 }
 
 void UserHandler::Login(std::string &_return, int64_t req_id,
@@ -563,10 +599,12 @@ void UserHandler::Login(std::string &_return, int64_t req_id,
   TextMapReader reader(carrier);
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "login_server", {opentracing::ChildOf(parent_span->get())});
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   size_t login_size;
   uint32_t memcached_flags;
@@ -578,12 +616,16 @@ void UserHandler::Login(std::string &_return, int64_t req_id,
   if (!memcached_client) {
     LOG(warning) << "Failed to pop a client from memcached pool";
   } else {
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     auto get_login_span = opentracing::Tracer::Global()->StartSpan(
         "user_mmc_get_client", {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     login_mmc = memcached_get(memcached_client, (username + ":login").c_str(),
                               (username + ":login").length(), &login_size,
                               &memcached_flags, &memcached_rc);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     get_login_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     if (!login_mmc && memcached_rc != MEMCACHED_NOTFOUND) {
       LOG(warning) << "Memcached error: "
                    << memcached_strerror(memcached_client, memcached_rc);
@@ -631,13 +673,17 @@ void UserHandler::Login(std::string &_return, int64_t req_id,
     bson_t *query = bson_new();
     BSON_APPEND_UTF8(query, "username", username.c_str());
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     auto find_span = opentracing::Tracer::Global()->StartSpan(
         "user_mongo_find_client", {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     mongoc_cursor_t *cursor =
         mongoc_collection_find_with_opts(collection, query, nullptr, nullptr);
     const bson_t *doc;
     bool found = mongoc_cursor_next(cursor, &doc);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     find_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
     bson_error_t error;
     if (mongoc_cursor_error(cursor, &error)) {
@@ -728,14 +774,18 @@ void UserHandler::Login(std::string &_return, int64_t req_id,
     if (!memcached_client) {
       LOG(warning) << "Failed to pop a client from memcached pool";
     } else {
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
       auto set_login_span = opentracing::Tracer::Global()->StartSpan(
           "user_mmc_set_client", {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
       std::string login_str = login_json.dump();
       memcached_rc =
           memcached_set(memcached_client, (username + ":login").c_str(),
                         (username + ":login").length(), login_str.c_str(),
                         login_str.length(), 0, 0);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
       set_login_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
       if (memcached_rc != MEMCACHED_SUCCESS) {
         LOG(warning) << "Failed to set the login info of user " << username
                      << " to Memcached: "
@@ -744,7 +794,9 @@ void UserHandler::Login(std::string &_return, int64_t req_id,
       memcached_pool_push(_memcached_client_pool, memcached_client);
     }
   }
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 }
 int64_t
 UserHandler::GetUserId(int64_t req_id, const std::string &username,
@@ -752,10 +804,12 @@ UserHandler::GetUserId(int64_t req_id, const std::string &username,
   TextMapReader reader(carrier);
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "get_user_id_server", {opentracing::ChildOf(parent_span->get())});
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   size_t user_id_size;
   uint32_t memcached_flags;
@@ -765,14 +819,18 @@ UserHandler::GetUserId(int64_t req_id, const std::string &username,
       memcached_pool_pop(_memcached_client_pool, true, &memcached_rc);
   char *user_id_mmc;
   if (memcached_client) {
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     auto id_get_span = opentracing::Tracer::Global()->StartSpan(
         "user_mmc_get_user_id_client",
         {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     user_id_mmc =
         memcached_get(memcached_client, (username + ":user_id").c_str(),
                       (username + ":user_id").length(), &user_id_size,
                       &memcached_flags, &memcached_rc);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     id_get_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     if (!user_id_mmc && memcached_rc != MEMCACHED_NOTFOUND) {
       ServiceException se;
       se.errorCode = ErrorCode::SE_MEMCACHED_ERROR;
@@ -814,13 +872,17 @@ UserHandler::GetUserId(int64_t req_id, const std::string &username,
     bson_t *query = bson_new();
     BSON_APPEND_UTF8(query, "username", username.c_str());
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     auto find_span = opentracing::Tracer::Global()->StartSpan(
         "user_mongo_find_client", {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     mongoc_cursor_t *cursor =
         mongoc_collection_find_with_opts(collection, query, nullptr, nullptr);
     const bson_t *doc;
     bool found = mongoc_cursor_next(cursor, &doc);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     find_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     if (!found) {
       bson_error_t error;
       if (mongoc_cursor_error(cursor, &error)) {
@@ -876,13 +938,17 @@ UserHandler::GetUserId(int64_t req_id, const std::string &username,
       LOG(warning) << "Failed to pop a client from memcached pool";
     } else {
       std::string user_id_str = std::to_string(user_id);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
       auto set_login_span = opentracing::Tracer::Global()->StartSpan(
           "user_mmc_set_client", {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
       memcached_rc =
           memcached_set(memcached_client, (username + ":user_id").c_str(),
                         (username + ":user_id").length(), user_id_str.c_str(),
                         user_id_str.length(), 0, 0);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
       set_login_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
       if (memcached_rc != MEMCACHED_SUCCESS) {
         LOG(warning) << "Failed to set the login info of user " << username
                      << " to Memcached: "
@@ -892,7 +958,9 @@ UserHandler::GetUserId(int64_t req_id, const std::string &username,
     }
   }
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   return user_id;
 }
 

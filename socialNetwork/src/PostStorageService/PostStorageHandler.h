@@ -53,10 +53,12 @@ void PostStorageHandler::StorePost(
   TextMapReader reader(carrier);
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "store_post_server", {opentracing::ChildOf(parent_span->get())});
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   mongoc_client_t *mongodb_client =
       mongoc_client_pool_pop(_mongodb_client_pool);
@@ -137,12 +139,17 @@ void PostStorageHandler::StorePost(
   bson_append_array_end(new_doc, &media_list);
 
   bson_error_t error;
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto insert_span = opentracing::Tracer::Global()->StartSpan(
       "post_storage_mongo_insert_client",
       {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
+
   bool inserted = mongoc_collection_insert_one(collection, new_doc, nullptr,
                                                nullptr, &error);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   insert_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   if (!inserted) {
     LOG(error) << "Error: Failed to insert post to MongoDB: " << error.message;
@@ -159,7 +166,9 @@ void PostStorageHandler::StorePost(
   mongoc_collection_destroy(collection);
   mongoc_client_pool_push(_mongodb_client_pool, mongodb_client);
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 }
 
 void PostStorageHandler::ReadPost(
@@ -169,10 +178,12 @@ void PostStorageHandler::ReadPost(
   TextMapReader reader(carrier);
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "read_post_server", {opentracing::ChildOf(parent_span->get())});
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   std::string post_id_str = std::to_string(post_id);
 
@@ -188,8 +199,10 @@ void PostStorageHandler::ReadPost(
 
   size_t post_mmc_size;
   uint32_t memcached_flags;
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto get_span = opentracing::Tracer::Global()->StartSpan(
       "post_storage_mmc_get_client", {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   char *post_mmc =
       memcached_get(memcached_client, post_id_str.c_str(), post_id_str.length(),
                     &post_mmc_size, &memcached_flags, &memcached_rc);
@@ -201,7 +214,9 @@ void PostStorageHandler::ReadPost(
     throw se;
   }
   memcached_pool_push(_memcached_client_pool, memcached_client);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   get_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   if (post_mmc) {
     LOG(debug) << "Get post " << post_id << " cache hit from Memcached";
@@ -256,14 +271,22 @@ void PostStorageHandler::ReadPost(
 
     bson_t *query = bson_new();
     BSON_APPEND_INT64(query, "post_id", post_id);
+
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     auto find_span = opentracing::Tracer::Global()->StartSpan(
         "post_storage_mongo_find_client",
         {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
+
     mongoc_cursor_t *cursor =
         mongoc_collection_find_with_opts(collection, query, nullptr, nullptr);
     const bson_t *doc;
     bool found = mongoc_cursor_next(cursor, &doc);
+
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     find_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
+
     if (!found) {
       bson_error_t error;
       if (mongoc_cursor_error(cursor, &error)) {
@@ -331,9 +354,11 @@ void PostStorageHandler::ReadPost(
         se.message = "Failed to pop a client from memcached pool";
         throw se;
       }
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
       auto set_span = opentracing::Tracer::Global()->StartSpan(
           "post_storage_mmc_set_client",
           {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
       memcached_rc = memcached_set(
           memcached_client, post_id_str.c_str(), post_id_str.length(),
@@ -343,13 +368,17 @@ void PostStorageHandler::ReadPost(
         LOG(warning) << "Failed to set post to Memcached: "
                      << memcached_strerror(memcached_client, memcached_rc);
       }
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
       set_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
       bson_free(post_json_char);
       memcached_pool_push(_memcached_client_pool, memcached_client);
     }
   }
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 }
 void PostStorageHandler::ReadPosts(
     std::vector<Post> &_return, int64_t req_id,
@@ -359,11 +388,13 @@ void PostStorageHandler::ReadPosts(
   TextMapReader reader(carrier);
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "post_storage_read_posts_server",
       {opentracing::ChildOf(parent_span->get())});
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   if (post_ids.empty()) {
     return;
@@ -417,8 +448,10 @@ void PostStorageHandler::ReadPosts(
   char *return_value;
   size_t return_value_length;
   uint32_t flags;
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto get_span = opentracing::Tracer::Global()->StartSpan(
       "post_storage_mmc_mget_client", {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   while (true) {
     return_value =
@@ -470,7 +503,9 @@ void PostStorageHandler::ReadPosts(
     post_ids_not_cached.erase(new_post.post_id);
     free(return_value);
   }
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   get_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   memcached_quit(memcached_client);
   memcached_pool_push(_memcached_client_pool, memcached_client);
   for (int i = 0; i < post_ids.size(); ++i) {
@@ -521,8 +556,10 @@ void PostStorageHandler::ReadPosts(
         mongoc_collection_find_with_opts(collection, query, nullptr, nullptr);
     const bson_t *doc;
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     auto find_span = opentracing::Tracer::Global()->StartSpan(
         "mongo_find_client", {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     while (true) {
       bool found = mongoc_cursor_next(cursor, &doc);
       if (!found) {
@@ -560,7 +597,9 @@ void PostStorageHandler::ReadPosts(
       return_map.insert({new_post.post_id, new_post});
       bson_free(post_json_char);
     }
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     find_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     bson_error_t error;
     if (mongoc_cursor_error(cursor, &error)) {
       LOG(warning) << error.message;
@@ -590,8 +629,10 @@ void PostStorageHandler::ReadPosts(
         se.message = "Failed to pop a client from memcached pool";
         throw se;
       }
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
       auto set_span = opentracing::Tracer::Global()->StartSpan(
           "mmc_set_client", {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
       for (auto &it : post_json_map) {
         std::string id_str = std::to_string(it.first);
         _rc = memcached_set(_memcached_client, id_str.c_str(), id_str.length(),
@@ -599,7 +640,9 @@ void PostStorageHandler::ReadPosts(
                             static_cast<time_t>(0), static_cast<uint32_t>(0));
       }
       memcached_pool_push(_memcached_client_pool, _memcached_client);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
       set_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     }));
   }
 

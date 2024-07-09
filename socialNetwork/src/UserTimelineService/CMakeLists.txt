@@ -28,13 +28,14 @@ target_link_libraries(
     Boost::log_setup
     Boost::program_options
     jaegertracing
-    /usr/local/lib/libhiredis.a
-    /usr/local/lib/libhiredis_ssl.a
-    /usr/local/lib/libredis++.a
+    #/usr/local/lib/libhiredis.a
+    #/usr/local/lib/libhiredis_ssl.a
+    #/usr/local/lib/libredis++.a
     OpenSSL::SSL
     yaml-cpp
     OpenTracing::OpenTracing
     redis++::redis++_static
+    hiredis::hiredis
 )
 
 install(TARGETS UserTimelineService DESTINATION ./)

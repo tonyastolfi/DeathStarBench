@@ -97,10 +97,12 @@ void UserTimelineHandler::WriteUserTimeline(
   TextMapReader reader(carrier);
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "write_user_timeline_server", {opentracing::ChildOf(parent_span->get())});
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   mongoc_client_t *mongodb_client =
       mongoc_client_pool_pop(_mongodb_client_pool);
@@ -128,13 +130,17 @@ void UserTimelineHandler::WriteUserTimeline(
                "]", "$position", BCON_INT32(0), "}", "}");
   bson_error_t error;
   bson_t reply;
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto update_span = opentracing::Tracer::Global()->StartSpan(
       "write_user_timeline_mongo_insert_client",
       {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   bool updated = mongoc_collection_find_and_modify(collection, query, nullptr,
                                                    update, nullptr, false, true,
                                                    true, &reply, &error);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   update_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   if (!updated) {
     // update the newly inserted document (upsert: false)
@@ -163,9 +169,11 @@ void UserTimelineHandler::WriteUserTimeline(
   mongoc_client_pool_push(_mongodb_client_pool, mongodb_client);
 
   // Update user's timeline in redis
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto redis_span = opentracing::Tracer::Global()->StartSpan(
       "write_user_timeline_redis_update_client",
       {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   try {
     if (_redis_client_pool)
       _redis_client_pool->zadd(std::to_string(user_id), std::to_string(post_id),
@@ -183,8 +191,10 @@ void UserTimelineHandler::WriteUserTimeline(
     LOG(error) << err.what();
     throw err;
   }
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   redis_span->Finish();
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 }
 
 void UserTimelineHandler::ReadUserTimeline(
@@ -194,18 +204,22 @@ void UserTimelineHandler::ReadUserTimeline(
   TextMapReader reader(carrier);
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "read_user_timeline_server", {opentracing::ChildOf(parent_span->get())});
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   if (stop <= start || start < 0) {
     return;
   }
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto redis_span = opentracing::Tracer::Global()->StartSpan(
       "read_user_timeline_redis_find_client",
       {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   std::vector<std::string> post_ids_str;
   try {
@@ -223,7 +237,9 @@ void UserTimelineHandler::ReadUserTimeline(
     LOG(error) << err.what();
     throw err;
   }
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   redis_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   std::vector<int64_t> post_ids;
   for (auto &post_id_str : post_ids_str) {
@@ -256,12 +272,16 @@ void UserTimelineHandler::ReadUserTimeline(
     bson_t *opts = BCON_NEW("projection", "{", "posts", "{", "$slice", "[",
                             BCON_INT32(0), BCON_INT32(stop), "]", "}", "}");
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     auto find_span = opentracing::Tracer::Global()->StartSpan(
         "user_timeline_mongo_find_client",
         {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     mongoc_cursor_t *cursor =
         mongoc_collection_find_with_opts(collection, query, opts, nullptr);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     find_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     const bson_t *doc;
     bool found = mongoc_cursor_next(cursor, &doc);
     if (found) {
@@ -329,9 +349,11 @@ void UserTimelineHandler::ReadUserTimeline(
       });
 
   if (redis_update_map.size() > 0) {
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     auto redis_update_span = opentracing::Tracer::Global()->StartSpan(
         "user_timeline_redis_update_client",
         {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     try {
       if (_redis_client_pool)
         _redis_client_pool->zadd(std::to_string(user_id),
@@ -350,7 +372,9 @@ void UserTimelineHandler::ReadUserTimeline(
       LOG(error) << err.what();
       throw err;
     }
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     redis_update_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   }
 
   try {
@@ -359,7 +383,9 @@ void UserTimelineHandler::ReadUserTimeline(
     LOG(error) << "Failed to get post from post-storage-service";
     throw;
   }
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 }
 
 } // namespace social_network

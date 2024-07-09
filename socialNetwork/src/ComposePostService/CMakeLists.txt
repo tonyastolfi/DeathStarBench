@@ -16,7 +16,7 @@ add_executable(
 
 target_include_directories(
     ComposePostService PRIVATE
-    /usr/local/include/jaegertracing
+    #/usr/local/include/jaegertracing
     ${THRIFT_GEN_CPP_DIR}
 )
 
@@ -29,8 +29,8 @@ target_link_libraries(
     Boost::log
     Boost::log_setup
     OpenSSL::SSL
-    /usr/local/lib/libjaegertracing.so
-    /usr/local/lib/libSimpleAmqpClient.so
+    #/usr/local/lib/libjaegertracing.so
+    #/usr/local/lib/libSimpleAmqpClient.so
     yaml-cpp
     OpenTracing::OpenTracing
     redis++::redis++_static

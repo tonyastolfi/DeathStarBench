@@ -77,10 +77,12 @@ void UrlShortenHandler::ComposeUrls(
   TextMapReader reader(carrier);
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "compose_urls_server", {opentracing::ChildOf(parent_span->get())});
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   std::vector<Url> target_urls;
   std::future<void> mongo_future;
@@ -112,8 +114,10 @@ void UrlShortenHandler::ComposeUrls(
         throw se;
       }
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
       auto mongo_span = opentracing::Tracer::Global()->StartSpan(
           "url_mongo_insert_client", {opentracing::ChildOf(&span->context())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
       mongoc_bulk_operation_t *bulk;
       bson_t *doc;
@@ -145,7 +149,10 @@ void UrlShortenHandler::ComposeUrls(
       mongoc_bulk_operation_destroy(bulk);
       mongoc_collection_destroy(collection);
       mongoc_client_pool_push(_mongodb_client_pool, mongodb_client);
+
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
       mongo_span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     });
   }
 
@@ -159,7 +166,10 @@ void UrlShortenHandler::ComposeUrls(
   }
 
   _return = target_urls;
+
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 }
 
 void UrlShortenHandler::GetExtendedUrls(

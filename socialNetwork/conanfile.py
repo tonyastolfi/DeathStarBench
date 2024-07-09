@@ -39,7 +39,8 @@ class SocialNetworkRecipe(ConanFile):
         self.tool_requires("thrift/0.20.0")
 
     def configure(self):
-        pass
+        self.options["redis-plus-plus"].with_tls = True
+        self.options["hiredis"].with_ssl = True
         
     def generate(self):
         deps = CMakeDeps(self)

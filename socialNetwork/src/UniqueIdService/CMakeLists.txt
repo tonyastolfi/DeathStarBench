@@ -8,7 +8,7 @@ add_executable(
 
 target_include_directories(
     UniqueIdService PRIVATE
-    /usr/local/include/jaegertracing
+    #/usr/local/include/jaegertracing
     ${THRIFT_GEN_CPP_DIR}    
 )
 
@@ -20,7 +20,7 @@ target_link_libraries(
     ${Boost_LIBRARIES}
     Boost::log
     Boost::log_setup
-    jaegertracing
+    #jaegertracing
     yaml-cpp
     OpenTracing::OpenTracing
     redis++::redis++_static

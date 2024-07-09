@@ -115,13 +115,17 @@ ComposePostHandler::ComposePostHandler(
 Creator ComposePostHandler::_ComposeCreaterHelper(
     int64_t req_id, int64_t user_id, const std::string &username,
     const std::map<std::string, std::string> &carrier) {
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   TextMapReader reader(carrier);
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "compose_creator_client", {opentracing::ChildOf(parent_span->get())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   std::map<std::string, std::string> writer_text_map;
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   TextMapWriter writer(writer_text_map);
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   auto user_client_wrapper = _user_service_client_pool->Pop();
   if (!user_client_wrapper) {
@@ -129,7 +133,9 @@ Creator ComposePostHandler::_ComposeCreaterHelper(
     se.errorCode = ErrorCode::SE_THRIFT_CONN_ERROR;
     se.message = "Failed to connect to user-service";
     LOG(error) << se.message;
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     throw se;
   }
 
@@ -141,11 +147,15 @@ Creator ComposePostHandler::_ComposeCreaterHelper(
   } catch (...) {
     LOG(error) << "Failed to send compose-creator to user-service";
     _user_service_client_pool->Remove(user_client_wrapper);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     throw;
   }
   _user_service_client_pool->Keepalive(user_client_wrapper);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   return _return_creator;
 }
 
@@ -153,12 +163,16 @@ TextServiceReturn ComposePostHandler::_ComposeTextHelper(
     int64_t req_id, const std::string &text,
     const std::map<std::string, std::string> &carrier) {
   TextMapReader reader(carrier);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "compose_text_client", {opentracing::ChildOf(parent_span->get())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   std::map<std::string, std::string> writer_text_map;
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   TextMapWriter writer(writer_text_map);
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   auto text_client_wrapper = _text_service_client_pool->Pop();
   if (!text_client_wrapper) {
@@ -167,7 +181,9 @@ TextServiceReturn ComposePostHandler::_ComposeTextHelper(
     se.message = "Failed to connect to text-service";
     LOG(error) << se.message;
     ;
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     throw se;
   }
 
@@ -178,11 +194,15 @@ TextServiceReturn ComposePostHandler::_ComposeTextHelper(
   } catch (...) {
     LOG(error) << "Failed to send compose-text to text-service";
     _text_service_client_pool->Remove(text_client_wrapper);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     throw;
   }
   _text_service_client_pool->Keepalive(text_client_wrapper);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   return _return_text;
 }
 
@@ -191,12 +211,16 @@ std::vector<Media> ComposePostHandler::_ComposeMediaHelper(
     const std::vector<int64_t> &media_ids,
     const std::map<std::string, std::string> &carrier) {
   TextMapReader reader(carrier);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "compose_media_client", {opentracing::ChildOf(parent_span->get())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   auto media_client_wrapper = _media_service_client_pool->Pop();
   if (!media_client_wrapper) {
@@ -205,7 +229,9 @@ std::vector<Media> ComposePostHandler::_ComposeMediaHelper(
     se.message = "Failed to connect to media-service";
     LOG(error) << se.message;
     ;
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     throw se;
   }
 
@@ -217,11 +243,15 @@ std::vector<Media> ComposePostHandler::_ComposeMediaHelper(
   } catch (...) {
     LOG(error) << "Failed to send compose-media to media-service";
     _media_service_client_pool->Remove(media_client_wrapper);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     throw;
   }
   _media_service_client_pool->Keepalive(media_client_wrapper);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   return _return_media;
 }
 
@@ -229,12 +259,16 @@ int64_t ComposePostHandler::_ComposeUniqueIdHelper(
     int64_t req_id, const PostType::type post_type,
     const std::map<std::string, std::string> &carrier) {
   TextMapReader reader(carrier);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "compose_unique_id_client", {opentracing::ChildOf(parent_span->get())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   auto unique_id_client_wrapper = _unique_id_service_client_pool->Pop();
   if (!unique_id_client_wrapper) {
@@ -242,7 +276,9 @@ int64_t ComposePostHandler::_ComposeUniqueIdHelper(
     se.errorCode = ErrorCode::SE_THRIFT_CONN_ERROR;
     se.message = "Failed to connect to unique_id-service";
     LOG(error) << se.message;
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     throw se;
   }
 
@@ -254,11 +290,15 @@ int64_t ComposePostHandler::_ComposeUniqueIdHelper(
   } catch (...) {
     LOG(error) << "Failed to send compose-unique_id to unique_id-service";
     _unique_id_service_client_pool->Remove(unique_id_client_wrapper);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
     span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
     throw;
   }
   _unique_id_service_client_pool->Keepalive(unique_id_client_wrapper);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   return _return_unique_id;
 }
 
@@ -266,12 +306,16 @@ void ComposePostHandler::_UploadPostHelper(
     int64_t req_id, const Post &post,
     const std::map<std::string, std::string> &carrier) {
   TextMapReader reader(carrier);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "store_post_client", {opentracing::ChildOf(parent_span->get())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   auto post_storage_client_wrapper = _post_storage_client_pool->Pop();
   if (!post_storage_client_wrapper) {
@@ -292,19 +336,25 @@ void ComposePostHandler::_UploadPostHelper(
   }
   _post_storage_client_pool->Keepalive(post_storage_client_wrapper);
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 }
 
 void ComposePostHandler::_UploadUserTimelineHelper(
     int64_t req_id, int64_t post_id, int64_t user_id, int64_t timestamp,
     const std::map<std::string, std::string> &carrier) {
   TextMapReader reader(carrier);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "write_user_timeline_client", {opentracing::ChildOf(parent_span->get())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   auto user_timeline_client_wrapper = _user_timeline_client_pool->Pop();
   if (!user_timeline_client_wrapper) {
@@ -325,7 +375,9 @@ void ComposePostHandler::_UploadUserTimelineHelper(
   }
   _user_timeline_client_pool->Keepalive(user_timeline_client_wrapper);
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 }
 
 void ComposePostHandler::_UploadHomeTimelineHelper(
@@ -333,12 +385,16 @@ void ComposePostHandler::_UploadHomeTimelineHelper(
     const std::vector<int64_t> &user_mentions_id,
     const std::map<std::string, std::string> &carrier) {
   TextMapReader reader(carrier);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "write_home_timeline_client", {opentracing::ChildOf(parent_span->get())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   auto home_timeline_client_wrapper = _home_timeline_client_pool->Pop();
   if (!home_timeline_client_wrapper) {
@@ -360,7 +416,9 @@ void ComposePostHandler::_UploadHomeTimelineHelper(
   }
   _home_timeline_client_pool->Keepalive(home_timeline_client_wrapper);
 
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 }
 
 void ComposePostHandler::ComposePost(
@@ -369,12 +427,16 @@ void ComposePostHandler::ComposePost(
     const std::vector<std::string> &media_types, const PostType::type post_type,
     const std::map<std::string, std::string> &carrier) {
   TextMapReader reader(carrier);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   auto parent_span = opentracing::Tracer::Global()->Extract(reader);
   auto span = opentracing::Tracer::Global()->StartSpan(
       "compose_post_server", {opentracing::ChildOf(parent_span->get())});
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
   std::map<std::string, std::string> writer_text_map;
   TextMapWriter writer(writer_text_map);
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   opentracing::Tracer::Global()->Inject(span->context(), writer);
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 
   auto text_future =
       std::async(std::launch::async, &ComposePostHandler::_ComposeTextHelper,
@@ -442,7 +504,9 @@ void ComposePostHandler::ComposePost(
   // {
   //   throw;
   // }
+#ifdef SOCIAL_NETWORK_USE_OPENTRACING
   span->Finish();
+#endif // SOCIAL_NETWORK_USE_OPENTRACING
 }
 
 } // namespace social_network
