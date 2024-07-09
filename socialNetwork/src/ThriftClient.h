@@ -11,7 +11,10 @@
 #include <thrift/transport/TSocket.h>
 #include <thrift/transport/TSSLSocket.h>
 #include <thrift/transport/TTransportUtils.h>
-#include <thrift/stdcxx.h>
+//---------------------------------------------------------------------------------
+// See "Breaking Changes > 1.0.0" (https://thrift.apache.org/lib/cpp.html#section-1)
+// #include <thrift/stdcxx.h>
+//---------------------------------------------------------------------------------
 #include <nlohmann/json.hpp>
 #include "logger.h"
 #include "GenericClient.h"

@@ -11,8 +11,9 @@ target_include_directories(
     UserService PRIVATE
     ${LIBMEMCACHED_INCLUDE_DIR}
     ${MONGOC_INCLUDE_DIRS}
-    /usr/local/include/jwt
+    #/usr/local/include/jwt
     /usr/local/include/jaegertracing
+    ${THRIFT_GEN_CPP_DIR}    
 )
 
 target_link_libraries(
@@ -27,6 +28,8 @@ target_link_libraries(
     Boost::log_setup
     jaegertracing
     OpenSSL::SSL
+    cpp-jwt::cpp-jwt
+    yaml-cpp
 )
 
 install(TARGETS UserService DESTINATION ./)

@@ -12,6 +12,7 @@ target_include_directories(
     /usr/local/include/jaegertracing
     /usr/local/include/hiredis
     /usr/local/include/sw
+    ${THRIFT_GEN_CPP_DIR}    
 )
 
 target_link_libraries(
@@ -29,6 +30,7 @@ target_link_libraries(
     /usr/local/lib/libhiredis_ssl.a
     /usr/local/lib/libredis++.a
     OpenSSL::SSL
+    yaml-cpp
 )
 
 install(TARGETS UserTimelineService DESTINATION ./)

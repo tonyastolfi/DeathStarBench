@@ -12,6 +12,7 @@ target_include_directories(
     /usr/local/include/jaegertracing
     /usr/local/include/hiredis
     /usr/local/include/sw
+    ${THRIFT_GEN_CPP_DIR}
 )
 
 target_link_libraries(

@@ -15,6 +15,7 @@ add_executable(
 target_include_directories(
     ComposePostService PRIVATE
     /usr/local/include/jaegertracing
+    ${THRIFT_GEN_CPP_DIR}
 )
 
 target_link_libraries(
@@ -28,6 +29,7 @@ target_link_libraries(
     OpenSSL::SSL
     /usr/local/lib/libjaegertracing.so
     /usr/local/lib/libSimpleAmqpClient.so
+    yaml-cpp
 
 )
 

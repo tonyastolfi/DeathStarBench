@@ -10,6 +10,7 @@ target_include_directories(
     /usr/local/include/jaegertracing
     /usr/local/include/cpp_redis
     ${LIBEVENT_INCLUDE_DIRS}
+    ${THRIFT_GEN_CPP_DIR}    
 )
 
 

@@ -10,6 +10,7 @@ add_executable(
 target_include_directories(
     TextService PRIVATE
     /usr/local/include/jaegertracing
+    ${THRIFT_GEN_CPP_DIR}    
 )
 
 target_link_libraries(
@@ -21,6 +22,7 @@ target_link_libraries(
     Boost::log
     Boost::log_setup
     jaegertracing
+    yaml-cpp
 )
 
 install(TARGETS TextService DESTINATION ./)
