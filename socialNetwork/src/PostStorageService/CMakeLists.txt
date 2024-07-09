@@ -9,7 +9,7 @@ target_include_directories(
     PostStorageService PRIVATE
     ${LIBMEMCACHED_INCLUDE_DIR}
     ${MONGOC_INCLUDE_DIRS}
-    /usr/local/include/jaegertracing
+    #/usr/local/include/jaegertracing
     ${THRIFT_GEN_CPP_DIR}
 )
 
@@ -23,7 +23,7 @@ target_link_libraries(
     ${Boost_LIBRARIES}
     Boost::log
     Boost::log_setup
-    jaegertracing
+    #jaegertracing
     yaml-cpp
     OpenTracing::OpenTracing
 )

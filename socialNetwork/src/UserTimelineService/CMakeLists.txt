@@ -11,9 +11,9 @@ add_executable(
 target_include_directories(
     UserTimelineService PRIVATE
     ${MONGOC_INCLUDE_DIRS}
-    /usr/local/include/jaegertracing
-    /usr/local/include/hiredis
-    /usr/local/include/sw
+    #/usr/local/include/jaegertracing
+    #/usr/local/include/hiredis
+    #/usr/local/include/sw
     ${THRIFT_GEN_CPP_DIR}    
 )
 
@@ -27,7 +27,7 @@ target_link_libraries(
     Boost::log
     Boost::log_setup
     Boost::program_options
-    jaegertracing
+    #jaegertracing
     #/usr/local/lib/libhiredis.a
     #/usr/local/lib/libhiredis_ssl.a
     #/usr/local/lib/libredis++.a

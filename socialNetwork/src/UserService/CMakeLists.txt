@@ -26,7 +26,7 @@ target_link_libraries(
     ${Boost_LIBRARIES}
     Boost::log
     Boost::log_setup
-    jaegertracing
+    #jaegertracing
     OpenSSL::SSL
     cpp-jwt::cpp-jwt
     yaml-cpp

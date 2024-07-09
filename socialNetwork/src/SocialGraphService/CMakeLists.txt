@@ -9,9 +9,9 @@ add_executable(
 target_include_directories(
     SocialGraphService PRIVATE
     ${MONGOC_INCLUDE_DIRS}
-    /usr/local/include/jaegertracing
-    /usr/local/include/hiredis
-    /usr/local/include/sw
+    #/usr/local/include/jaegertracing
+    #/usr/local/include/hiredis
+    #/usr/local/include/sw
     ${THRIFT_GEN_CPP_DIR}
 )
 
