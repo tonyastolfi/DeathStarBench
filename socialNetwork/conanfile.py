@@ -41,6 +41,7 @@ class SocialNetworkRecipe(ConanFile):
     def configure(self):
         self.options["redis-plus-plus"].with_tls = True
         self.options["hiredis"].with_ssl = True
+        self.options["mongo-c-driver"].with_ssl = "openssl"
         
     def generate(self):
         deps = CMakeDeps(self)

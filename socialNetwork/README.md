@@ -160,7 +160,7 @@ _Work In Progress!_
 $ cd DeathStarBench/socialNetwork
 $ mkdir -p build
 $ cd build
-$ conan install --build=missing .. && conan build ..
+$ conan install --build=missing --build=mongo-* .. && conan build ..
 ```
 
 ## Questions and contact

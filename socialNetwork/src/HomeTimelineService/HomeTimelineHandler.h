@@ -179,9 +179,17 @@ void HomeTimelineHandler::WriteHomeTimeline(
     }
 
     else {
+#ifndef SOCIAL_NETWORK_ENABLE_REDIS_SHARDING
+
+      LOG(error) << "Redis sharding is not supported!";
+      std::abort();
+
+#else // SOCIAL_NETWORK_ENABLE_REDIS_SHARDING
+
       // Create multi-pipeline that match with shards pool
       std::map<std::shared_ptr<ConnectionPool>, std::shared_ptr<Pipeline>>
           pipe_map;
+
       auto *shards_pool = _redis_cluster_client_pool
                               ->get_shards_pool(); // TODO [tastolfi 2024-07-09]
 
@@ -217,6 +225,8 @@ void HomeTimelineHandler::WriteHomeTimeline(
         LOG(error) << err.what();
         throw err;
       }
+
+#endif // SOCIAL_NETWORK_ENABLE_REDIS_SHARDING
     }
   }
 #ifdef SOCIAL_NETWORK_USE_OPENTRACING
