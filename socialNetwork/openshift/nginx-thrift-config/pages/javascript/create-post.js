@@ -25,9 +25,12 @@ function uploadPost(media_json) {
         Http.open("POST", url, true);
         var body = "post_type=0&text=" + document.getElementById('post-content').value
         Http.onreadystatechange = function () {
-            if (this.readyState == 4 && this.status == 200) {
-                console.log(Http.responseText);
-            }
+          if (this.readyState == XMLHttpRequest.DONE && this.status == 200) {
+            console.log(Http.responseText);
+          }
+          if (this.readyState >= XMLHttpRequest.LOADING) {
+            window.location.reload();
+          }
         };
         if (media_json === undefined) {
             Http.send(body);
@@ -35,7 +38,9 @@ function uploadPost(media_json) {
             body += "&media_ids=[\"" + media_json.media_id + "\"]&media_types=[\"" + media_json.media_type + "\"]"
             Http.send(body);
         }
+      setTimeout(() => {
         window.location.reload();
+      }, 750/*ms*/);
     }
 }
 
